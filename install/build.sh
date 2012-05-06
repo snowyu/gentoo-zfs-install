@@ -37,13 +37,13 @@ set -e
 set -x
 
 URL=$1
-STAGE3=stage3-amd64-20110707.tar.bz2
+STAGE3=stage3-amd64-20120426.tar.bz2
 SNAPSHOT=portage-latest.tar.bz2
 
 # Kernel version we want, KV with the -gentoo- flag for initramf & kernel,
 # KVP with just the version for portage.
-KV=2.6.38-gentoo-r6
-KVP=2.6.38-r6
+KV=3.2.12-gentoo
+KVP=3.2.12
 # Note: these are in chroot-script.sh too.
 
 # Keep the lights from going out while we're watching...
