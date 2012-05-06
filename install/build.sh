@@ -144,8 +144,8 @@ mkdir -p /mnt/gentoo/etc/kernels
 ### mv /mnt/gentoo/etc/kernels/config /etc/kernels/kernel-config-x86_64-${KV}
 ## Instead, we'll use one we've trimmed down a bit.  You might leave this out
 ## and choose to run menuconfig instead for a more customized system.
-wget ${URL}/install/kernel-config
-mv kernel-config /mnt/gentoo/etc/kernels/kernel-config-x86_64-${KV}
+wget ${URL}/install/kernel-config-x86_64-${KV}
+mv kernel-config-x86_64-${KV} /mnt/gentoo/etc/kernels/kernel-config-x86_64-${KV}
 
 # Download the stage & snapshot we'll be using.
 cd /mnt/gentoo
