@@ -77,13 +77,14 @@ sleep 1
 ## End of cleanup.
 
 # Loop over the four drives we're using
-for f in a b ; do
+for f in a b c; do
   ## EDIT ME:
   ## Make up some partitions.  We do 64M for grub, and the rest for ZFS.
   sgdisk --zap-all /dev/sd${f}
   sgdisk \
-    --new=1:2048:133120 --typecode=1:EF02 --change-name=1:"grub" \
-    --largest-new=2 --typecode=2:BF01 --change-name=2:"zfs" \
+    --new=1:2048:133119 --typecode=1:EF02 --change-name=1:"grub" \
+    --new=2:133120:67241983 --typecode=2:BF01 --change-name=2:"mirror" \
+    --new=3:67241984:67241983 --typecode=3:BF01 --change-name=3:"raidz" \
     /dev/sd${f}
 done
 
@@ -95,7 +96,7 @@ done
 # Create the pool.  We're doing RAID-5 on four SCSI disks.  Adjust
 # as needed.  We need to umount the new pool right after so we can
 # change the mount point & options
-zpool create -f rpool mirror sda2 sdb2
+zpool create -f rpool raidz sda3 sdb3 sdc3
 zfs umount rpool
 
 # Set the mount point of the new pool to root and mark it NOT mountable.
@@ -109,7 +110,7 @@ zfs create rpool/ROOT
 zfs set mountpoint=legacy rpool/ROOT
 
 ## If you're *not* using RAID-Z, you can set bootfs here, and you
-## won't be need to pass a root=... param to grub.  You can't boot
+## won't be need to pass a root=zfs:auto... param to grub.  You can't boot
 ## off RAID-Z (only mirror), so zpool won't let you set this for a 
 ## RAID-Z pool.
 zpool set bootfs=rpool/ROOT rpool
@@ -175,14 +176,26 @@ mount --rbind /dev /mnt/gentoo/dev
 ## favorite local mirrors (you should change these).  You'll probably
 ## also want to adjust your make opts based on how many CPU's you have.
 cat >> /mnt/gentoo/etc/make.conf <<EOF
+CFLAGS="-march=amdfam10 -O2 -pipe -mno-3dnow -mcx16 -mpopcnt -msse3 -msse4a -mmmx"
+CXXFLAGS="${CFLAGS}"
+CHOST="x86_64-pc-linux-gnu"
+
 DRACUT_MODULES="zfs"
 
-USE="mmx sse sse2 sse3 ssl zfs bash-completion vmware_guest_linux git subversion zfs -dso lzma gpg curl wget"
+USE="mmx sse sse2 ssse3 ssl zfs bash-completion zsh-completion git subversion zfs -dso -doc lzma gpg curl wget vaapi"
 
-MAKEOPTS="-j5"
+MAKEOPTS="-j3"
 
-GENTOO_MIRRORS="http://mirror.datapipe.net/gentoo http://gentoo.mirrors.easynews.com/linux/gentoo/ http://lug.mtu.edu/gentoo/ rsync://mirrors.rit.edu/gentoo/ http://mirrors.rit.edu/gentoo/"
-SYNC="rsync://rsync5.us.gentoo.org/gentoo-portage"
+FEATURES="ccache parallel-fetch"
+CCACHE_SIZE="1G"
+# CCACHE_DIR="/var/tmp/ccache" ccache -s # static the ccache data
+VIDEO_CARDS="fglrx"
+INPUT_DEVICES="evdev"
+
+GENTOO_MIRRORS="ftp://mirrors.sohu.com/gentoo/ http://ftp.daum.net/gentoo/ http://123.58.173.106/gentoo/ ftp://ftp.lecl.net/pub/gentoo/ http://ftp.lecl.net/pub/gentoo/"
+
+#GENTOO_MIRRORS="http://mirror.datapipe.net/gentoo http://gentoo.mirrors.easynews.com/linux/gentoo/ http://lug.mtu.edu/gentoo/ rsync://mirrors.rit.edu/gentoo/ http://mirrors.rit.edu/gentoo/"
+#SYNC="rsync://rsync5.us.gentoo.org/gentoo-portage"
 EOF
 
 # Setup /etc/fstab in the chroot with our boot, and a legacy entry for root.
